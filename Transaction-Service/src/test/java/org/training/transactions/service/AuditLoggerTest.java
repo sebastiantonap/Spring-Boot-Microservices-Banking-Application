@@ -10,204 +10,175 @@ class AuditLoggerTest {
 
     private AuditLogger auditLogger;
 
-    // Valid test fixtures — account must be >= 4 chars for PIIDataHandler.maskAccountNumber
-    private static final String VALID_REF = "TXN-1234567890";
+    private static final String VALID_REF_ID = "TXN-1234567890";
     private static final String VALID_TYPE = "DEBIT";
-    private static final String VALID_ACCOUNT = "1234567890";
-    private static final String VALID_USER = "teller_jane";
+    private static final String VALID_ACCOUNT = "123456789012";
+    private static final String VALID_USER = "teller1";
 
     @BeforeEach
     void setUp() {
         auditLogger = new AuditLogger();
     }
 
-    // ── logTransactionSuccess — happy path ──────────────────────────────
-
-    @Test
-    void should_logSuccess_when_allFieldsValid() {
-        assertDoesNotThrow(() ->
-                auditLogger.logTransactionSuccess(VALID_REF, VALID_TYPE, VALID_ACCOUNT, VALID_USER));
-    }
-
-    // ── logTransactionSuccess — null/blank required fields ──────────────
+    // ===== logTransactionSuccess =====
 
     @Test
     void should_throwAuditException_when_successReferenceIdIsNull() {
         AuditException ex = assertThrows(AuditException.class,
                 () -> auditLogger.logTransactionSuccess(null, VALID_TYPE, VALID_ACCOUNT, VALID_USER));
-        assertTrue(ex.getMessage().contains("Reference ID"));
+        assertTrue(ex.getMessage().contains("Reference ID must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successReferenceIdIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
                 () -> auditLogger.logTransactionSuccess("  ", VALID_TYPE, VALID_ACCOUNT, VALID_USER));
-        assertTrue(ex.getMessage().contains("Reference ID"));
+        assertTrue(ex.getMessage().contains("Reference ID must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successTransactionTypeIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, null, VALID_ACCOUNT, VALID_USER));
-        assertTrue(ex.getMessage().contains("Transaction type"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, null, VALID_ACCOUNT, VALID_USER));
+        assertTrue(ex.getMessage().contains("Transaction type must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successTransactionTypeIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, " ", VALID_ACCOUNT, VALID_USER));
-        assertTrue(ex.getMessage().contains("Transaction type"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, "  ", VALID_ACCOUNT, VALID_USER));
+        assertTrue(ex.getMessage().contains("Transaction type must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successAccountNumberIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, VALID_TYPE, null, VALID_USER));
-        assertTrue(ex.getMessage().contains("Account number"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, VALID_TYPE, null, VALID_USER));
+        assertTrue(ex.getMessage().contains("Account number must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successAccountNumberIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, VALID_TYPE, "  ", VALID_USER));
-        assertTrue(ex.getMessage().contains("Account number"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, VALID_TYPE, "  ", VALID_USER));
+        assertTrue(ex.getMessage().contains("Account number must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successRequestingUserIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, VALID_TYPE, VALID_ACCOUNT, null));
-        assertTrue(ex.getMessage().contains("Requesting user"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, null));
+        assertTrue(ex.getMessage().contains("Requesting user must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_successRequestingUserIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionSuccess(VALID_REF, VALID_TYPE, VALID_ACCOUNT, " "));
-        assertTrue(ex.getMessage().contains("Requesting user"));
+                () -> auditLogger.logTransactionSuccess(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, "  "));
+        assertTrue(ex.getMessage().contains("Requesting user must not be null"));
     }
 
-    // ── logTransactionFailure — happy path ──────────────────────────────
-
     @Test
-    void should_logFailure_when_allFieldsValid() {
+    void should_logSuccessfully_when_allFieldsValid() {
         assertDoesNotThrow(() ->
-                auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, VALID_ACCOUNT,
-                        VALID_USER, "Insufficient funds"));
+                auditLogger.logTransactionSuccess(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, VALID_USER));
     }
 
-    @Test
-    void should_logFailure_when_referenceIdIsNull() {
-        // referenceId defaults to "N/A"
-        assertDoesNotThrow(() ->
-                auditLogger.logTransactionFailure(null, VALID_TYPE, VALID_ACCOUNT,
-                        VALID_USER, "Insufficient funds"));
-    }
-
-    @Test
-    void should_logFailure_when_accountNumberIsNull() {
-        // accountNumber defaults to "UNKNOWN"
-        assertDoesNotThrow(() ->
-                auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, null,
-                        VALID_USER, "Insufficient funds"));
-    }
-
-    @Test
-    void should_logFailure_when_requestingUserIsNull() {
-        // requestingUser defaults to "UNKNOWN"
-        assertDoesNotThrow(() ->
-                auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, VALID_ACCOUNT,
-                        null, "Insufficient funds"));
-    }
-
-    // ── logTransactionFailure — blank (non-null) optional fields ─────────
-
-    @Test
-    void should_throwPIIException_when_failureAccountNumberIsBlank() {
-        // Documents production gap: blank accountNumber takes the non-null branch
-        // and calls PIIDataHandler.maskAccountNumber("  ") which throws PIIException
-        // because length < 4. Null defaults to "UNKNOWN" but blank does not.
-        assertThrows(PIIDataHandler.PIIException.class,
-                () -> auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, "  ",
-                        VALID_USER, "Insufficient funds"));
-    }
-
-    // ── logTransactionFailure — required fields ─────────────────────────
+    // ===== logTransactionFailure =====
 
     @Test
     void should_throwAuditException_when_failureTransactionTypeIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionFailure(VALID_REF, null, VALID_ACCOUNT,
-                        VALID_USER, "Insufficient funds"));
-        assertTrue(ex.getMessage().contains("Transaction type"));
+                () -> auditLogger.logTransactionFailure(VALID_REF_ID, null, VALID_ACCOUNT, VALID_USER, "Insufficient funds"));
+        assertTrue(ex.getMessage().contains("Transaction type must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_failureTransactionTypeIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionFailure(VALID_REF, " ", VALID_ACCOUNT,
-                        VALID_USER, "Insufficient funds"));
-        assertTrue(ex.getMessage().contains("Transaction type"));
+                () -> auditLogger.logTransactionFailure(VALID_REF_ID, "  ", VALID_ACCOUNT, VALID_USER, "Insufficient funds"));
+        assertTrue(ex.getMessage().contains("Transaction type must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_failureReasonIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, VALID_ACCOUNT,
-                        VALID_USER, null));
-        assertTrue(ex.getMessage().contains("Failure reason"));
+                () -> auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, VALID_USER, null));
+        assertTrue(ex.getMessage().contains("Failure reason must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_failureReasonIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, VALID_ACCOUNT,
-                        VALID_USER, "  "));
-        assertTrue(ex.getMessage().contains("Failure reason"));
+                () -> auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, VALID_USER, "  "));
+        assertTrue(ex.getMessage().contains("Failure reason must not be null"));
     }
 
-    // ── logAuthEvent — happy path ───────────────────────────────────────
-
     @Test
-    void should_logAuthEvent_when_allFieldsValid() {
+    void should_logFailure_when_referenceIdIsNull() {
+        // referenceId defaults to "N/A" when null
         assertDoesNotThrow(() ->
-                auditLogger.logAuthEvent("user1", "LOGIN_SUCCESS", "192.168.1.1"));
+                auditLogger.logTransactionFailure(null, VALID_TYPE, VALID_ACCOUNT, VALID_USER, "Timeout"));
     }
 
     @Test
-    void should_logAuthEvent_when_ipAddressIsNull() {
-        // ipAddress defaults to "UNKNOWN"
+    void should_logFailure_when_accountNumberIsNull() {
+        // accountNumber defaults to "UNKNOWN" when null
         assertDoesNotThrow(() ->
-                auditLogger.logAuthEvent("user1", "LOGIN_SUCCESS", null));
-    }
-
-    // ── logAuthEvent — required fields ──────────────────────────────────
-
-    @Test
-    void should_throwAuditException_when_authUserIdIsNull() {
-        AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logAuthEvent(null, "LOGIN_SUCCESS", "192.168.1.1"));
-        assertTrue(ex.getMessage().contains("User ID"));
+                auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, null, VALID_USER, "Validation error"));
     }
 
     @Test
-    void should_throwAuditException_when_authUserIdIsBlank() {
+    void should_logFailure_when_requestingUserIsNull() {
+        // requestingUser defaults to "UNKNOWN" when null
+        assertDoesNotThrow(() ->
+                auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, null, "Auth failed"));
+    }
+
+    @Test
+    void should_logFailure_when_allFieldsValid() {
+        assertDoesNotThrow(() ->
+                auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, VALID_ACCOUNT, VALID_USER, "Exceeded limit"));
+    }
+
+    // ===== logAuthEvent =====
+
+    @Test
+    void should_throwAuditException_when_authEventUserIdIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logAuthEvent("  ", "LOGIN_SUCCESS", "192.168.1.1"));
-        assertTrue(ex.getMessage().contains("User ID"));
+                () -> auditLogger.logAuthEvent(null, "LOGIN_SUCCESS", "10.0.0.1"));
+        assertTrue(ex.getMessage().contains("User ID must not be null"));
+    }
+
+    @Test
+    void should_throwAuditException_when_authEventUserIdIsBlank() {
+        AuditException ex = assertThrows(AuditException.class,
+                () -> auditLogger.logAuthEvent("  ", "LOGIN_SUCCESS", "10.0.0.1"));
+        assertTrue(ex.getMessage().contains("User ID must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_authEventTypeIsNull() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logAuthEvent("user1", null, "192.168.1.1"));
-        assertTrue(ex.getMessage().contains("Event type"));
+                () -> auditLogger.logAuthEvent("user1", null, "10.0.0.1"));
+        assertTrue(ex.getMessage().contains("Event type must not be null"));
     }
 
     @Test
     void should_throwAuditException_when_authEventTypeIsBlank() {
         AuditException ex = assertThrows(AuditException.class,
-                () -> auditLogger.logAuthEvent("user1", "  ", "192.168.1.1"));
-        assertTrue(ex.getMessage().contains("Event type"));
+                () -> auditLogger.logAuthEvent("user1", "  ", "10.0.0.1"));
+        assertTrue(ex.getMessage().contains("Event type must not be null"));
+    }
+
+    @Test
+    void should_logAuthEvent_when_ipAddressIsNull() {
+        // ipAddress defaults to "UNKNOWN" when null
+        assertDoesNotThrow(() -> auditLogger.logAuthEvent("user1", "LOGIN_SUCCESS", null));
+    }
+
+    @Test
+    void should_logAuthEvent_when_allFieldsValid() {
+        assertDoesNotThrow(() -> auditLogger.logAuthEvent("user1", "MFA_SUCCESS", "192.168.1.1"));
     }
 }

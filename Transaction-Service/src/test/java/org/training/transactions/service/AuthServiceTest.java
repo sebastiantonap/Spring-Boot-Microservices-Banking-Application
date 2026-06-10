@@ -15,19 +15,7 @@ class AuthServiceTest {
         authService = new AuthService();
     }
 
-    // ── validateSSOToken ────────────────────────────────────────────────
-
-    @Test
-    void should_returnTrue_when_tokenIsValid() {
-        // Arrange — three dot-separated segments, Bearer prefix
-        String token = "Bearer header.payload.signature";
-
-        // Act
-        boolean result = authService.validateSSOToken(token);
-
-        // Assert
-        assertTrue(result);
-    }
+    // ===== validateSSOToken =====
 
     @Test
     void should_throwAuthenticationException_when_tokenIsNull() {
@@ -46,46 +34,31 @@ class AuthServiceTest {
     @Test
     void should_throwAuthenticationException_when_tokenMissingBearerPrefix() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
-                () -> authService.validateSSOToken("header.payload.signature"));
+                () -> authService.validateSSOToken("abc.def.ghi"));
         assertTrue(ex.getMessage().contains("missing Bearer prefix"));
     }
 
     @Test
-    void should_throwAuthenticationException_when_tokenHasTwoSegments() {
+    void should_throwAuthenticationException_when_tokenHasWrongSegmentCount() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
                 () -> authService.validateSSOToken("Bearer a.b"));
         assertTrue(ex.getMessage().contains("malformed"));
     }
 
     @Test
-    void should_throwAuthenticationException_when_tokenHasOneSegment() {
-        AuthenticationException ex = assertThrows(AuthenticationException.class,
-                () -> authService.validateSSOToken("Bearer singlepart"));
-        assertTrue(ex.getMessage().contains("malformed"));
-    }
-
-    @Test
-    void should_throwAuthenticationException_when_tokenHasFourSegments() {
+    void should_throwAuthenticationException_when_tokenHasTooManySegments() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
                 () -> authService.validateSSOToken("Bearer a.b.c.d"));
         assertTrue(ex.getMessage().contains("malformed"));
     }
 
-    // Note: The current implementation always returns a non-expired token
-    // (issuedAt = now - 100, which is within the 3600s window).
-    // An expired-token test would require reflection or a redesign to inject time.
-
-    // ── validateMFA ─────────────────────────────────────────────────────
-
     @Test
-    void should_returnTrue_when_mfaCodeIsValid() {
-        assertTrue(authService.validateMFA("user1", "123456"));
+    void should_returnTrue_when_tokenIsValid() {
+        // Token with 3 dot-separated segments, simulated expiry returns recent issuedAt
+        assertTrue(authService.validateSSOToken("Bearer header.payload.signature"));
     }
 
-    @Test
-    void should_returnFalse_when_mfaCodeIsWrong() {
-        assertFalse(authService.validateMFA("user1", "654321"));
-    }
+    // ===== validateMFA =====
 
     @Test
     void should_throwAuthenticationException_when_userIdIsNull() {
@@ -111,7 +84,7 @@ class AuthServiceTest {
     @Test
     void should_throwAuthenticationException_when_mfaCodeIsBlank() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
-                () -> authService.validateMFA("user1", "   "));
+                () -> authService.validateMFA("user1", "  "));
         assertTrue(ex.getMessage().contains("MFA code must not be null"));
     }
 
@@ -123,26 +96,30 @@ class AuthServiceTest {
     }
 
     @Test
-    void should_throwAuthenticationException_when_mfaCodeIsFiveDigits() {
+    void should_throwAuthenticationException_when_mfaCodeHasFiveDigits() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
                 () -> authService.validateMFA("user1", "12345"));
         assertTrue(ex.getMessage().contains("6-digit numeric"));
     }
 
     @Test
-    void should_throwAuthenticationException_when_mfaCodeIsSevenDigits() {
+    void should_throwAuthenticationException_when_mfaCodeHasSevenDigits() {
         AuthenticationException ex = assertThrows(AuthenticationException.class,
                 () -> authService.validateMFA("user1", "1234567"));
         assertTrue(ex.getMessage().contains("6-digit numeric"));
     }
 
-    // ── isSessionActive ─────────────────────────────────────────────────
+    @Test
+    void should_returnFalse_when_mfaCodeIsWrong() {
+        assertFalse(authService.validateMFA("user1", "654321"));
+    }
 
     @Test
-    void should_returnTrue_when_sessionIdIsExactly32Chars() {
-        String sessionId = "a".repeat(32);
-        assertTrue(authService.isSessionActive(sessionId));
+    void should_returnTrue_when_mfaCodeIsValid() {
+        assertTrue(authService.validateMFA("user1", "123456"));
     }
+
+    // ===== isSessionActive =====
 
     @Test
     void should_returnFalse_when_sessionIdIsNull() {
@@ -155,12 +132,18 @@ class AuthServiceTest {
     }
 
     @Test
-    void should_returnFalse_when_sessionIdIs31Chars() {
+    void should_returnFalse_when_sessionIdLengthIs31() {
+        // 31 characters
         assertFalse(authService.isSessionActive("a".repeat(31)));
     }
 
     @Test
-    void should_returnFalse_when_sessionIdIs33Chars() {
+    void should_returnTrue_when_sessionIdLengthIs32() {
+        assertTrue(authService.isSessionActive("a".repeat(32)));
+    }
+
+    @Test
+    void should_returnFalse_when_sessionIdLengthIs33() {
         assertFalse(authService.isSessionActive("a".repeat(33)));
     }
 }

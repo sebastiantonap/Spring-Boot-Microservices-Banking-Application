@@ -7,23 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PIIDataHandlerTest {
 
-    // ── maskAccountNumber ───────────────────────────────────────────────
-
-    @Test
-    void should_maskAccountNumber_when_12Digits() {
-        assertEquals("********9012", PIIDataHandler.maskAccountNumber("123456789012"));
-    }
-
-    @Test
-    void should_maskAccountNumber_when_exactly4Chars() {
-        // length == 4 → zero stars + last four
-        assertEquals("1234", PIIDataHandler.maskAccountNumber("1234"));
-    }
-
-    @Test
-    void should_maskAccountNumber_when_5Chars() {
-        assertEquals("*2345", PIIDataHandler.maskAccountNumber("12345"));
-    }
+    // ===== maskAccountNumber =====
 
     @Test
     void should_throwPIIException_when_accountNumberIsNull() {
@@ -36,15 +20,25 @@ class PIIDataHandlerTest {
     void should_throwPIIException_when_accountNumberTooShort() {
         PIIException ex = assertThrows(PIIException.class,
                 () -> PIIDataHandler.maskAccountNumber("123"));
-        assertTrue(ex.getMessage().contains("too short"));
+        assertTrue(ex.getMessage().contains("too short to mask"));
     }
-
-    // ── maskRoutingNumber ───────────────────────────────────────────────
 
     @Test
-    void should_maskRoutingNumber_when_valid9Digits() {
-        assertEquals("*****6789", PIIDataHandler.maskRoutingNumber("123456789"));
+    void should_maskAccountNumber_when_exactlyFourChars() {
+        assertEquals("1234", PIIDataHandler.maskAccountNumber("1234"));
     }
+
+    @Test
+    void should_maskAccountNumber_when_twelveDigits() {
+        assertEquals("********9012", PIIDataHandler.maskAccountNumber("123456789012"));
+    }
+
+    @Test
+    void should_maskAccountNumber_when_tenDigits() {
+        assertEquals("******7890", PIIDataHandler.maskAccountNumber("1234567890"));
+    }
+
+    // ===== maskRoutingNumber =====
 
     @Test
     void should_throwPIIException_when_routingNumberIsNull() {
@@ -54,14 +48,14 @@ class PIIDataHandlerTest {
     }
 
     @Test
-    void should_throwPIIException_when_routingNumberIs8Digits() {
+    void should_throwPIIException_when_routingNumberHas8Digits() {
         PIIException ex = assertThrows(PIIException.class,
                 () -> PIIDataHandler.maskRoutingNumber("12345678"));
         assertTrue(ex.getMessage().contains("exactly 9 digits"));
     }
 
     @Test
-    void should_throwPIIException_when_routingNumberIs10Digits() {
+    void should_throwPIIException_when_routingNumberHas10Digits() {
         PIIException ex = assertThrows(PIIException.class,
                 () -> PIIDataHandler.maskRoutingNumber("1234567890"));
         assertTrue(ex.getMessage().contains("exactly 9 digits"));
@@ -74,17 +68,12 @@ class PIIDataHandlerTest {
         assertTrue(ex.getMessage().contains("exactly 9 digits"));
     }
 
-    // ── maskSSN ─────────────────────────────────────────────────────────
-
     @Test
-    void should_maskSSN_when_9DigitsNoHyphens() {
-        assertEquals("***-**-6789", PIIDataHandler.maskSSN("123456789"));
+    void should_maskRoutingNumber_when_valid9Digits() {
+        assertEquals("*****6789", PIIDataHandler.maskRoutingNumber("123456789"));
     }
 
-    @Test
-    void should_maskSSN_when_formattedWithHyphens() {
-        assertEquals("***-**-6789", PIIDataHandler.maskSSN("123-45-6789"));
-    }
+    // ===== maskSSN =====
 
     @Test
     void should_throwPIIException_when_ssnIsNull() {
@@ -94,67 +83,83 @@ class PIIDataHandlerTest {
     }
 
     @Test
-    void should_throwPIIException_when_ssnIs8Digits() {
+    void should_throwPIIException_when_ssnHas8Digits() {
         PIIException ex = assertThrows(PIIException.class,
                 () -> PIIDataHandler.maskSSN("12345678"));
         assertTrue(ex.getMessage().contains("9 digits"));
     }
 
     @Test
-    void should_maskSSN_when_ssnHasWrongHyphenPlacement() {
-        // "12-345-6789" → strips hyphens → "123456789" → 9 digits → valid
-        // Actually this should still pass because stripping hyphens yields 9 digits
+    void should_maskSSN_when_hyphensInNonStandardPositions() {
+        // "12-345-6789" → strip hyphens → "123456789" → 9 digits → valid
         assertEquals("***-**-6789", PIIDataHandler.maskSSN("12-345-6789"));
+    }
+
+    @Test
+    void should_throwPIIException_when_ssnTooFewDigitsAfterStrippingHyphens() {
+        // "1-2-345678" → strip hyphens → "12345678" → 8 digits → invalid
+        PIIException ex = assertThrows(PIIException.class,
+                () -> PIIDataHandler.maskSSN("1-2-345678"));
+        assertTrue(ex.getMessage().contains("9 digits"));
+    }
+
+    @Test
+    void should_maskSSN_when_nineDigitsNoHyphens() {
+        assertEquals("***-**-6789", PIIDataHandler.maskSSN("123456789"));
+    }
+
+    @Test
+    void should_maskSSN_when_standardHyphenatedFormat() {
+        assertEquals("***-**-6789", PIIDataHandler.maskSSN("123-45-6789"));
     }
 
     @Test
     void should_throwPIIException_when_ssnHasLetters() {
         PIIException ex = assertThrows(PIIException.class,
-                () -> PIIDataHandler.maskSSN("12345678a"));
+                () -> PIIDataHandler.maskSSN("12345abcd"));
         assertTrue(ex.getMessage().contains("9 digits"));
     }
 
-    // ── assertNoRawPII ──────────────────────────────────────────────────
+    // ===== assertNoRawPII =====
 
     @Test
-    void should_doNothing_when_fieldValueIsNull() {
-        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII(null, "testField"));
+    void should_notThrow_when_fieldValueIsNull() {
+        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII(null, "field"));
     }
 
     @Test
-    void should_doNothing_when_fieldIsCleanText() {
-        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("Hello world", "testField"));
+    void should_notThrow_when_fieldValueIsClean() {
+        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("Hello World", "notes"));
     }
 
     @Test
-    void should_doNothing_when_fieldContainsMaskedValue() {
-        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("****9012", "testField"));
+    void should_notThrow_when_fieldContainsMaskedValue() {
+        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("****9012", "account"));
     }
 
     @Test
     void should_throwPIIException_when_fieldContains10DigitNumber() {
         PIIException ex = assertThrows(PIIException.class,
-                () -> PIIDataHandler.assertNoRawPII("acct 1234567890 here", "accountField"));
+                () -> PIIDataHandler.assertNoRawPII("Account is 1234567890 here", "notes"));
         assertTrue(ex.getMessage().contains("unmasked account number"));
     }
 
     @Test
     void should_throwPIIException_when_fieldContains12DigitNumber() {
         PIIException ex = assertThrows(PIIException.class,
-                () -> PIIDataHandler.assertNoRawPII("acct 123456789012 here", "accountField"));
+                () -> PIIDataHandler.assertNoRawPII("Acct 123456789012", "field"));
         assertTrue(ex.getMessage().contains("unmasked account number"));
     }
 
     @Test
     void should_throwPIIException_when_fieldContains9DigitNumber() {
         PIIException ex = assertThrows(PIIException.class,
-                () -> PIIDataHandler.assertNoRawPII("routing 123456789 here", "routingField"));
-        assertTrue(ex.getMessage().contains("unmasked routing number"));
+                () -> PIIDataHandler.assertNoRawPII("Routing 123456789 found", "field"));
+        assertTrue(ex.getMessage().contains("unmasked routing number or SSN"));
     }
 
     @Test
-    void should_doNothing_when_fieldContains8DigitNumber() {
-        // 8 digits don't match either pattern
-        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("ref 12345678 here", "refField"));
+    void should_notThrow_when_fieldContains8DigitNumber() {
+        assertDoesNotThrow(() -> PIIDataHandler.assertNoRawPII("Code 12345678 ok", "field"));
     }
 }

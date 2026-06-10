@@ -77,6 +77,19 @@ PR_FILES = [
     "PIIDataHandlerTest.java",
 ]
 
+DEVIN_SESSIONS = [
+    {
+        "label": "Session 1 — Transaction-Service coverage",
+        "url": "https://app.devin.ai/sessions/3ad1d2a3421144139599e0b04ddbcbf8?tab=pr%3A2",
+        "pr": "PR #2",
+    },
+    {
+        "label": "Session 2 — Transaction-Service coverage",
+        "url": "https://app.devin.ai/sessions/e59b1bd04e304ba5b55eaffa48a91516?tab=pr%3A3",
+        "pr": "PR #3",
+    },
+]
+
 # ── Colour palette ───────────────────────────────────────────────────────────
 
 BG = "#09090b"
@@ -510,6 +523,62 @@ def _pr_card():
     )
 
 
+def _sessions_section():
+    items = []
+    for s in DEVIN_SESSIONS:
+        items.append(
+            html.A(
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Span(
+                                    s["label"],
+                                    style={
+                                        "fontWeight": "500",
+                                        "fontSize": "13px",
+                                        "color": TEXT,
+                                    },
+                                ),
+                                _tag(s["pr"]),
+                            ],
+                            style={
+                                "display": "flex",
+                                "justifyContent": "space-between",
+                                "alignItems": "center",
+                                "width": "100%",
+                            },
+                        ),
+                        html.Div(
+                            s["url"].split("?")[0],
+                            style={
+                                "fontSize": "11px",
+                                "color": TEXT_MUTED,
+                                "marginTop": "4px",
+                                "overflow": "hidden",
+                                "textOverflow": "ellipsis",
+                            },
+                        ),
+                    ],
+                    style=_card_style(),
+                ),
+                href=s["url"],
+                target="_blank",
+                style={"textDecoration": "none", "flex": "1 1 calc(50% - 6px)", "minWidth": "240px"},
+            )
+        )
+    return html.Div(
+        [
+            _section_label("Devin sessions"),
+            html.Div(
+                items,
+                style={"display": "flex", "gap": "12px", "flexWrap": "wrap"},
+            ),
+        ],
+        style={"marginTop": "16px"},
+    )
+
+
 # ── App ──────────────────────────────────────────────────────────────────────
 
 app = dash.Dash(
@@ -529,6 +598,7 @@ app.layout = html.Div(
                 _coverage_section(),
                 _roadmap_section(),
                 _pr_card(),
+                _sessions_section(),
             ],
             style={
                 "maxWidth": "960px",

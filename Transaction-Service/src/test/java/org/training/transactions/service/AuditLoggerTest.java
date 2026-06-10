@@ -120,6 +120,18 @@ class AuditLoggerTest {
                         null, "Insufficient funds"));
     }
 
+    // ── logTransactionFailure — blank (non-null) optional fields ─────────
+
+    @Test
+    void should_throwPIIException_when_failureAccountNumberIsBlank() {
+        // Documents production gap: blank accountNumber takes the non-null branch
+        // and calls PIIDataHandler.maskAccountNumber("  ") which throws PIIException
+        // because length < 4. Null defaults to "UNKNOWN" but blank does not.
+        assertThrows(PIIDataHandler.PIIException.class,
+                () -> auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, "  ",
+                        VALID_USER, "Insufficient funds"));
+    }
+
     // ── logTransactionFailure — required fields ─────────────────────────
 
     @Test

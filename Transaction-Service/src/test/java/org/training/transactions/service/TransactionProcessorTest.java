@@ -59,6 +59,25 @@ class TransactionProcessorTest {
         assertEquals("SUCCESS", result.status);
     }
 
+    // ── processDebit — requestingUser not validated (production gap) ────
+
+    @Test
+    void should_succeedDebit_when_requestingUserIsNull() {
+        // Documents production gap: processDebit does not validate requestingUser
+        // unlike processCredit which rejects null/blank. OCC "who" field is missing.
+        TransactionResult result = processor.processDebit(
+                VALID_ACCOUNT_10, VALID_ROUTING, new BigDecimal("100.00"), null);
+        assertEquals("SUCCESS", result.status);
+    }
+
+    @Test
+    void should_succeedDebit_when_requestingUserIsBlank() {
+        // Documents production gap: processDebit does not validate requestingUser
+        TransactionResult result = processor.processDebit(
+                VALID_ACCOUNT_10, VALID_ROUTING, new BigDecimal("100.00"), "  ");
+        assertEquals("SUCCESS", result.status);
+    }
+
     // ── processDebit — MFA threshold ────────────────────────────────────
 
     @Test

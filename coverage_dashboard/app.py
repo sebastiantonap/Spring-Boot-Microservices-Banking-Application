@@ -79,31 +79,17 @@ PR_FILES = [
 
 # ── Colour palette ───────────────────────────────────────────────────────────
 
-BG = "#0a0a0a"
-CARD_BG = "#f5f4f0"
-GREEN = "#2d7a3a"
-GREEN_LIGHT = "#4caf50"
-BADGE_GREEN = "#22c55e"
-TEXT_DARK = "#1a1a1a"
-TEXT_MUTED = "#6b7280"
-TAG_BG = "#e5e7eb"
-BAR_TRACK = "#e0e0e0"
-
-# ── Class icons (Unicode) ───────────────────────────────────────────────────
-
-CLASS_ICONS = {
-    "AuthService": "🔐",
-    "TransactionProcessor": "💳",
-    "AuditLogger": "📋",
-    "PIIDataHandler": "🛡️",
-}
-
-CLASS_DESCRIPTIONS = {
-    "AuthService": "JWT validation & session management",
-    "TransactionProcessor": "Core DEBIT / CREDIT engine",
-    "AuditLogger": "Immutable event recorder",
-    "PIIDataHandler": "PII masking & validation",
-}
+BG = "#09090b"
+CARD_BG = "#18181b"
+CARD_BORDER = "#27272a"
+GREEN = "#22c55e"
+GREEN_DIM = "#166534"
+TEXT = "#fafafa"
+TEXT_SECONDARY = "#a1a1aa"
+TEXT_MUTED = "#71717a"
+TAG_BG = "#27272a"
+TAG_TEXT = "#d4d4d8"
+BAR_TRACK = "#27272a"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -112,41 +98,64 @@ def _pct(value):
     return f"{value}%"
 
 
-def _progress_bar(pct, colour=GREEN_LIGHT, height="8px", track=BAR_TRACK):
+def _progress_bar(pct, colour=GREEN, height="4px", track=BAR_TRACK):
     return html.Div(
         html.Div(
             style={
                 "width": f"{pct}%",
                 "height": height,
                 "backgroundColor": colour,
-                "borderRadius": "4px",
-                "transition": "width 0.5s ease",
+                "borderRadius": "2px",
+                "transition": "width 0.4s ease",
             },
         ),
         style={
             "width": "100%",
             "height": height,
             "backgroundColor": track,
-            "borderRadius": "4px",
+            "borderRadius": "2px",
             "overflow": "hidden",
         },
     )
 
 
+def _card_style(**overrides):
+    base = {
+        "backgroundColor": CARD_BG,
+        "border": f"1px solid {CARD_BORDER}",
+        "borderRadius": "8px",
+        "padding": "16px 20px",
+    }
+    base.update(overrides)
+    return base
+
+
 # ── Layout builders ──────────────────────────────────────────────────────────
 
 
-def _badge(text, bg=BADGE_GREEN):
+def _badge(text, bg=GREEN_DIM, color=GREEN):
     return html.Span(
         text,
         style={
             "backgroundColor": bg,
-            "color": "white",
-            "padding": "4px 14px",
-            "borderRadius": "20px",
-            "fontSize": "13px",
-            "fontWeight": "600",
-            "letterSpacing": "0.5px",
+            "color": color,
+            "padding": "3px 10px",
+            "borderRadius": "4px",
+            "fontSize": "12px",
+            "fontWeight": "500",
+        },
+    )
+
+
+def _section_label(text):
+    return html.Div(
+        text,
+        style={
+            "color": TEXT_MUTED,
+            "fontSize": "11px",
+            "letterSpacing": "0.05em",
+            "textTransform": "uppercase",
+            "marginBottom": "12px",
         },
     )
 
@@ -159,88 +168,75 @@ def _header():
                     html.H1(
                         "Compliance Test Coverage",
                         style={
-                            "color": "white",
-                            "fontSize": "28px",
-                            "fontWeight": "700",
+                            "color": TEXT,
+                            "fontSize": "22px",
+                            "fontWeight": "600",
                             "margin": "0",
+                            "letterSpacing": "-0.02em",
                         },
                     ),
                     html.P(
-                        "Transaction-Service · OCC Examination Readiness",
+                        "Transaction-Service  /  OCC Examination Readiness",
                         style={
                             "color": TEXT_MUTED,
-                            "fontSize": "14px",
-                            "margin": "4px 0 0 0",
+                            "fontSize": "13px",
+                            "margin": "2px 0 0 0",
                         },
                     ),
                 ],
             ),
-            html.Div(
-                [
-                    _badge("PR open"),
-                ],
-                style={"display": "flex", "alignItems": "center", "gap": "8px"},
-            ),
+            _badge("PR open"),
         ],
         style={
             "display": "flex",
             "justifyContent": "space-between",
             "alignItems": "center",
-            "padding": "24px 0",
+            "padding": "20px 0 16px 0",
         },
     )
 
 
-def _metric_card(card_id, label, icon):
+def _metric_card(card_id, label):
     return html.Div(
         [
-            html.Div(
-                icon,
-                style={"fontSize": "20px", "marginBottom": "8px"},
-            ),
             html.Div(
                 "—",
                 id=card_id,
                 style={
-                    "fontSize": "32px",
-                    "fontWeight": "700",
-                    "color": TEXT_DARK,
-                    "lineHeight": "1.1",
+                    "fontSize": "28px",
+                    "fontWeight": "600",
+                    "color": TEXT,
+                    "lineHeight": "1",
+                    "letterSpacing": "-0.02em",
                 },
             ),
             html.Div(
                 label,
                 style={
-                    "fontSize": "12px",
+                    "fontSize": "11px",
                     "color": TEXT_MUTED,
-                    "marginTop": "4px",
+                    "marginTop": "6px",
                     "textTransform": "uppercase",
-                    "letterSpacing": "0.5px",
+                    "letterSpacing": "0.04em",
                 },
             ),
         ],
-        style={
-            "backgroundColor": CARD_BG,
-            "borderRadius": "12px",
-            "padding": "20px",
-            "flex": "1",
-            "minWidth": "180px",
-        },
+        style=_card_style(flex="1", minWidth="160px"),
     )
 
 
 def _metric_row():
     return html.Div(
         [
-            _metric_card("metric-coverage", "Overall coverage", "📊"),
-            _metric_card("metric-compliance", "Compliance paths", "✅"),
-            _metric_card("metric-tests", "Tests written", "🧪"),
-            _metric_card("metric-time", "Session time", "⏱️"),
+            _metric_card("metric-coverage", "Overall coverage"),
+            _metric_card("metric-compliance", "Compliance paths"),
+            _metric_card("metric-tests", "Tests written"),
+            _metric_card("metric-time", "Session time"),
         ],
         style={
             "display": "flex",
-            "gap": "16px",
-            "marginBottom": "32px",
+            "gap": "12px",
+            "marginBottom": "28px",
             "flexWrap": "wrap",
         },
     )
@@ -254,14 +250,14 @@ def _toggle():
                 id="btn-before",
                 n_clicks=0,
                 style={
-                    "padding": "8px 20px",
-                    "border": "1px solid #444",
-                    "borderRadius": "8px 0 0 8px",
+                    "padding": "6px 16px",
+                    "border": f"1px solid {CARD_BORDER}",
+                    "borderRadius": "6px 0 0 6px",
                     "cursor": "pointer",
-                    "fontSize": "13px",
-                    "fontWeight": "600",
-                    "backgroundColor": BG,
-                    "color": "white",
+                    "fontSize": "12px",
+                    "fontWeight": "500",
+                    "backgroundColor": "transparent",
+                    "color": TEXT_MUTED,
                     "outline": "none",
                 },
             ),
@@ -270,22 +266,19 @@ def _toggle():
                 id="btn-after",
                 n_clicks=0,
                 style={
-                    "padding": "8px 20px",
-                    "border": "1px solid " + GREEN,
-                    "borderRadius": "0 8px 8px 0",
+                    "padding": "6px 16px",
+                    "border": f"1px solid {GREEN_DIM}",
+                    "borderRadius": "0 6px 6px 0",
                     "cursor": "pointer",
-                    "fontSize": "13px",
-                    "fontWeight": "600",
-                    "backgroundColor": GREEN,
-                    "color": "white",
+                    "fontSize": "12px",
+                    "fontWeight": "500",
+                    "backgroundColor": GREEN_DIM,
+                    "color": GREEN,
                     "outline": "none",
                 },
             ),
         ],
-        style={
-            "display": "flex",
-            "marginBottom": "24px",
-        },
+        style={"display": "flex", "marginBottom": "20px"},
     )
 
 
@@ -294,64 +287,53 @@ def _class_card(name):
         [
             html.Div(
                 [
-                    html.Span(
-                        CLASS_ICONS.get(name, "📦"),
-                        style={"fontSize": "28px"},
+                    html.Div(
+                        name,
+                        style={
+                            "fontWeight": "500",
+                            "fontSize": "13px",
+                            "color": TEXT,
+                        },
                     ),
                     html.Div(
                         [
-                            html.Div(
-                                name,
+                            html.Span(
+                                "—",
+                                id=f"class-pct-{name}",
                                 style={
-                                    "fontWeight": "700",
-                                    "fontSize": "15px",
-                                    "color": TEXT_DARK,
+                                    "fontSize": "22px",
+                                    "fontWeight": "600",
+                                    "color": GREEN,
+                                    "letterSpacing": "-0.02em",
                                 },
                             ),
-                            html.Div(
-                                CLASS_DESCRIPTIONS.get(name, ""),
+                            html.Span(
+                                "",
+                                id=f"class-tests-{name}",
                                 style={
-                                    "fontSize": "12px",
+                                    "fontSize": "11px",
                                     "color": TEXT_MUTED,
+                                    "marginLeft": "8px",
                                 },
                             ),
                         ],
+                        style={
+                            "display": "flex",
+                            "alignItems": "baseline",
+                            "marginTop": "8px",
+                        },
                     ),
                 ],
-                style={"display": "flex", "gap": "12px", "alignItems": "center"},
             ),
             html.Div(
-                [
-                    html.Span(
-                        "—",
-                        id=f"class-pct-{name}",
-                        style={
-                            "fontSize": "28px",
-                            "fontWeight": "700",
-                            "color": GREEN,
-                        },
-                    ),
-                    html.Span(
-                        "",
-                        id=f"class-tests-{name}",
-                        style={
-                            "fontSize": "12px",
-                            "color": TEXT_MUTED,
-                            "marginLeft": "8px",
-                        },
-                    ),
-                ],
-                style={"display": "flex", "alignItems": "baseline"},
+                id=f"class-bar-{name}",
+                style={"marginTop": "10px"},
             ),
-            html.Div(id=f"class-bar-{name}", style={"marginTop": "8px"}),
         ],
-        style={
-            "backgroundColor": CARD_BG,
-            "borderRadius": "12px",
-            "padding": "20px",
-            "flex": "1 1 calc(50% - 8px)",
-            "minWidth": "260px",
-        },
+        style=_card_style(**{
+            "flex": "1 1 calc(50% - 6px)",
+            "minWidth": "240px",
+        }),
     )
 
 
@@ -359,26 +341,17 @@ def _coverage_section():
     class_names = list(AFTER_DATA["classes"].keys())
     return html.Div(
         [
-            html.Div(
-                "COVERAGE BY COMPLIANCE-CRITICAL CLASS",
-                style={
-                    "color": TEXT_MUTED,
-                    "fontSize": "12px",
-                    "letterSpacing": "1px",
-                    "marginBottom": "16px",
-                    "fontWeight": "600",
-                },
-            ),
+            _section_label("Coverage by compliance-critical class"),
             html.Div(
                 [_class_card(n) for n in class_names],
                 style={
                     "display": "flex",
-                    "gap": "16px",
+                    "gap": "12px",
                     "flexWrap": "wrap",
                 },
             ),
         ],
-        style={"marginBottom": "40px"},
+        style={"marginBottom": "32px"},
     )
 
 
@@ -387,11 +360,11 @@ def _tag(text):
         text,
         style={
             "backgroundColor": TAG_BG,
-            "color": TEXT_DARK,
-            "padding": "2px 10px",
-            "borderRadius": "12px",
+            "color": TAG_TEXT,
+            "padding": "2px 8px",
+            "borderRadius": "4px",
             "fontSize": "11px",
-            "fontWeight": "500",
+            "fontWeight": "400",
         },
     )
 
@@ -405,18 +378,22 @@ def _roadmap_card(item):
             html.Div(
                 [
                     html.Div(
-                        item["service"],
-                        style={
-                            "fontWeight": "700",
-                            "fontSize": "15px",
-                            "color": TEXT_DARK,
-                        },
+                        [
+                            html.Span(
+                                item["service"],
+                                style={
+                                    "fontWeight": "500",
+                                    "fontSize": "13px",
+                                    "color": TEXT,
+                                },
+                            ),
+                        ],
                     ),
                     html.Div(
                         [_tag(t) for t in item["tags"]],
                         style={
                             "display": "flex",
-                            "gap": "6px",
+                            "gap": "4px",
                             "marginTop": "6px",
                             "flexWrap": "wrap",
                         },
@@ -425,7 +402,7 @@ def _roadmap_card(item):
             ),
             html.Div(
                 _tag(item["phase"]),
-                style={"position": "absolute", "top": "16px", "right": "16px"},
+                style={"position": "absolute", "top": "14px", "right": "14px"},
             ),
             html.Div(
                 [
@@ -433,49 +410,47 @@ def _roadmap_card(item):
                         [
                             html.Span(
                                 "Before ",
-                                style={"fontSize": "12px", "color": TEXT_MUTED},
+                                style={"fontSize": "11px", "color": TEXT_MUTED},
                             ),
                             html.Span(
                                 _pct(before_pct),
                                 style={
-                                    "fontSize": "12px",
-                                    "fontWeight": "600",
-                                    "color": TEXT_DARK,
+                                    "fontSize": "11px",
+                                    "fontWeight": "500",
+                                    "color": TEXT_SECONDARY,
                                 },
                             ),
                         ],
                         style={"marginBottom": "4px"},
                     ),
-                    _progress_bar(before_pct, colour="#9ca3af"),
+                    _progress_bar(before_pct, colour=TEXT_MUTED),
                     html.Div(
                         [
                             html.Span(
                                 f"{label_after} ",
-                                style={"fontSize": "12px", "color": TEXT_MUTED},
+                                style={"fontSize": "11px", "color": TEXT_MUTED},
                             ),
                             html.Span(
                                 _pct(after_pct),
                                 style={
-                                    "fontSize": "12px",
-                                    "fontWeight": "600",
+                                    "fontSize": "11px",
+                                    "fontWeight": "500",
                                     "color": GREEN,
                                 },
                             ),
                         ],
-                        style={"marginTop": "10px", "marginBottom": "4px"},
+                        style={"marginTop": "8px", "marginBottom": "4px"},
                     ),
-                    _progress_bar(after_pct, colour=GREEN_LIGHT),
+                    _progress_bar(after_pct, colour=GREEN),
                 ],
-                style={"marginTop": "16px"},
+                style={"marginTop": "14px"},
             ),
         ],
         style={
-            "backgroundColor": CARD_BG,
-            "borderRadius": "12px",
-            "padding": "20px",
+            **_card_style(),
             "position": "relative",
-            "flex": "1 1 calc(50% - 8px)",
-            "minWidth": "260px",
+            "flex": "1 1 calc(50% - 6px)",
+            "minWidth": "240px",
         },
     )
 
@@ -483,26 +458,17 @@ def _roadmap_card(item):
 def _roadmap_section():
     return html.Div(
         [
-            html.Div(
-                "WHAT THIS UNLOCKS — ROADMAP",
-                style={
-                    "color": TEXT_MUTED,
-                    "fontSize": "12px",
-                    "letterSpacing": "1px",
-                    "marginBottom": "16px",
-                    "fontWeight": "600",
-                },
-            ),
+            _section_label("What this unlocks — roadmap"),
             html.Div(
                 [_roadmap_card(item) for item in ROADMAP],
                 style={
                     "display": "flex",
-                    "gap": "16px",
+                    "gap": "12px",
                     "flexWrap": "wrap",
                 },
             ),
         ],
-        style={"marginBottom": "40px"},
+        style={"marginBottom": "32px"},
     )
 
 
@@ -512,53 +478,33 @@ def _pr_card():
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Span(
-                                "🔀",
-                                style={"fontSize": "18px", "marginRight": "8px"},
-                            ),
-                            html.Span(
-                                "feat: add OCC compliance test coverage — transaction service",
-                                style={
-                                    "fontWeight": "700",
-                                    "fontSize": "15px",
-                                    "color": TEXT_DARK,
-                                },
-                            ),
-                        ],
-                        style={"display": "flex", "alignItems": "center"},
+                        "feat: add OCC compliance test coverage — transaction service",
+                        style={
+                            "fontWeight": "500",
+                            "fontSize": "13px",
+                            "color": TEXT,
+                        },
                     ),
                     html.Div(
                         [_tag(f) for f in PR_FILES],
                         style={
                             "display": "flex",
-                            "gap": "6px",
-                            "marginTop": "12px",
+                            "gap": "4px",
+                            "marginTop": "8px",
                             "flexWrap": "wrap",
                         },
                     ),
                 ],
                 style={"flex": "1"},
             ),
-            html.Div(
-                [
-                    _badge("42 tests passing", bg=GREEN),
-                ],
-                style={
-                    "display": "flex",
-                    "alignItems": "center",
-                    "flexShrink": "0",
-                },
-            ),
+            _badge("42 tests passing"),
         ],
         style={
-            "backgroundColor": CARD_BG,
-            "borderRadius": "12px",
-            "padding": "20px",
+            **_card_style(),
             "display": "flex",
             "justifyContent": "space-between",
             "alignItems": "center",
-            "gap": "20px",
+            "gap": "16px",
             "flexWrap": "wrap",
         },
     )
@@ -585,16 +531,17 @@ app.layout = html.Div(
                 _pr_card(),
             ],
             style={
-                "maxWidth": "1100px",
+                "maxWidth": "960px",
                 "margin": "0 auto",
-                "padding": "0 24px 48px 24px",
+                "padding": "0 24px 40px 24px",
             },
         ),
     ],
     style={
         "backgroundColor": BG,
         "minHeight": "100vh",
-        "fontFamily": "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', "
+                      "system-ui, sans-serif",
     },
 )
 
@@ -612,37 +559,30 @@ def toggle_view(n_before, n_after):
     ctx = dash.callback_context
     triggered = ctx.triggered[0]["prop_id"] if ctx.triggered else "btn-after.n_clicks"
 
-    base_before = {
-        "padding": "8px 20px",
-        "borderRadius": "8px 0 0 8px",
+    base = {
+        "padding": "6px 16px",
         "cursor": "pointer",
-        "fontSize": "13px",
-        "fontWeight": "600",
+        "fontSize": "12px",
+        "fontWeight": "500",
         "outline": "none",
     }
-    base_after = {
-        "padding": "8px 20px",
-        "borderRadius": "0 8px 8px 0",
-        "cursor": "pointer",
-        "fontSize": "13px",
-        "fontWeight": "600",
-        "outline": "none",
-    }
+    base_before = {**base, "borderRadius": "6px 0 0 6px"}
+    base_after = {**base, "borderRadius": "0 6px 6px 0"}
 
     if "btn-before" in triggered:
         return (
             "before",
-            {**base_before, "backgroundColor": "#333", "color": "white",
-             "border": "1px solid #555"},
-            {**base_after, "backgroundColor": BG, "color": TEXT_MUTED,
-             "border": "1px solid #444"},
+            {**base_before, "backgroundColor": CARD_BORDER, "color": TEXT,
+             "border": f"1px solid {TEXT_MUTED}"},
+            {**base_after, "backgroundColor": "transparent", "color": TEXT_MUTED,
+             "border": f"1px solid {CARD_BORDER}"},
         )
     return (
         "after",
-        {**base_before, "backgroundColor": BG, "color": TEXT_MUTED,
-         "border": "1px solid #444"},
-        {**base_after, "backgroundColor": GREEN, "color": "white",
-         "border": "1px solid " + GREEN},
+        {**base_before, "backgroundColor": "transparent", "color": TEXT_MUTED,
+         "border": f"1px solid {CARD_BORDER}"},
+        {**base_after, "backgroundColor": GREEN_DIM, "color": GREEN,
+         "border": f"1px solid {GREEN_DIM}"},
     )
 
 
@@ -670,7 +610,6 @@ def _class_outputs(name):
     ]
 
 
-# Build a single callback that updates all four class cards at once
 _all_class_outputs = []
 for _cn in AFTER_DATA["classes"]:
     _all_class_outputs.extend(_class_outputs(_cn))
@@ -687,14 +626,15 @@ def update_classes(view):
         info = d["classes"][name]
         pct = info["coverage"]
         tests = info["tests"]
-        colour = GREEN if pct >= 85 else ("#f59e0b" if pct >= 50 else TEXT_MUTED)
+        colour = GREEN if pct >= 85 else ("#eab308" if pct >= 50 else TEXT_MUTED)
         results.extend(
             [
                 _pct(pct),
                 {
-                    "fontSize": "28px",
-                    "fontWeight": "700",
+                    "fontSize": "22px",
+                    "fontWeight": "600",
                     "color": colour if pct > 0 else TEXT_MUTED,
+                    "letterSpacing": "-0.02em",
                 },
                 f"{tests} tests" if tests else "0 tests",
                 _progress_bar(pct, colour=colour if pct > 0 else BAR_TRACK),

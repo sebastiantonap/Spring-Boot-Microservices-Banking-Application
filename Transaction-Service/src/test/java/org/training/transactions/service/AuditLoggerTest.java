@@ -129,6 +129,15 @@ class AuditLoggerTest {
     }
 
     @Test
+    void should_throwPIIException_when_failureAccountNumberIsBlank() {
+        // Documents production gap: blank (non-null) accountNumber passes the null check
+        // but PIIDataHandler.maskAccountNumber("  ") throws PIIException because length < 4.
+        // Unlike null, blank does not default to "UNKNOWN".
+        assertThrows(PIIDataHandler.PIIException.class,
+                () -> auditLogger.logTransactionFailure(VALID_REF_ID, VALID_TYPE, "  ", VALID_USER, "Limit exceeded"));
+    }
+
+    @Test
     void should_logFailure_when_requestingUserIsNull() {
         // requestingUser defaults to "UNKNOWN" when null
         assertDoesNotThrow(() ->

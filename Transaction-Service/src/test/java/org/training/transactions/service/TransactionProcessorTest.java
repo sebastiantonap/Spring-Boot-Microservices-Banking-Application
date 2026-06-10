@@ -171,6 +171,26 @@ class TransactionProcessorTest {
         assertEquals("DEBIT", result.type);
     }
 
+    @Test
+    void should_succeedDebit_when_requestingUserIsNull() {
+        // Documents production gap: processDebit does not validate requestingUser,
+        // unlike processCredit which throws for null/blank. This asymmetry may be
+        // an OCC compliance concern since audit records require a "who" field.
+        TransactionResult result = processor.processDebit(VALID_ACCOUNT_10, VALID_ROUTING,
+                new BigDecimal("100"), null);
+        assertNotNull(result);
+        assertEquals("DEBIT", result.type);
+    }
+
+    @Test
+    void should_succeedDebit_when_requestingUserIsBlank() {
+        // Documents production gap: processDebit accepts blank requestingUser
+        TransactionResult result = processor.processDebit(VALID_ACCOUNT_10, VALID_ROUTING,
+                new BigDecimal("100"), "  ");
+        assertNotNull(result);
+        assertEquals("DEBIT", result.type);
+    }
+
     // ===== processCredit =====
 
     @Test

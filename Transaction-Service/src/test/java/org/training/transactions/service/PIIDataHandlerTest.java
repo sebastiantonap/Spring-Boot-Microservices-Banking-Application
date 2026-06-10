@@ -101,7 +101,7 @@ class PIIDataHandlerTest {
     }
 
     @Test
-    void should_throwPIIException_when_ssnHasWrongHyphenPlacement() {
+    void should_maskSSN_when_ssnHasWrongHyphenPlacement() {
         // "12-345-6789" → strips hyphens → "123456789" → 9 digits → valid
         // Actually this should still pass because stripping hyphens yields 9 digits
         assertEquals("***-**-6789", PIIDataHandler.maskSSN("12-345-6789"));

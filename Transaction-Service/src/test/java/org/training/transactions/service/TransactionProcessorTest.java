@@ -197,13 +197,20 @@ class TransactionProcessorTest {
         assertTrue(ex.getMessage().contains("Requesting user"));
     }
 
-    // ── processCredit – account validation (same rules) ─────────────────
+    // ── processCredit – account validation ─────────────────────────────
 
     @Test
     void should_throwTransactionException_when_creditAccountIsNull() {
         TransactionException ex = assertThrows(TransactionException.class,
                 () -> processor.processCredit(null, new BigDecimal("1.00"), VALID_USER));
         assertTrue(ex.getMessage().contains("Account number"));
+    }
+
+    @Test
+    void should_throwTransactionException_when_creditAccountTooShort() {
+        TransactionException ex = assertThrows(TransactionException.class,
+                () -> processor.processCredit("12345", new BigDecimal("1.00"), VALID_USER));
+        assertTrue(ex.getMessage().contains("10-12 digits"));
     }
 
     // ── validateAmount ──────────────────────────────────────────────────

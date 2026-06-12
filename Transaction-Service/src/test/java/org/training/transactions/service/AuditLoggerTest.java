@@ -3,6 +3,7 @@ package org.training.transactions.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.training.transactions.service.AuditLogger.AuditException;
+import org.training.transactions.service.PIIDataHandler.PIIException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -110,6 +111,16 @@ class AuditLoggerTest {
     void should_logFailure_when_requestingUserIsNull() {
         assertDoesNotThrow(() ->
                 auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, VALID_ACCT, null, "System error"));
+    }
+
+    @Test
+    void should_throwPIIException_when_failureAccountNumberIsBlank() {
+        // Documents production gap: blank (non-null) accountNumber passes the
+        // null check but PIIDataHandler.maskAccountNumber("  ") throws PIIException
+        // because length < 4. The null-check at AuditLogger:69 only guards null,
+        // not blank strings.
+        assertThrows(PIIException.class,
+                () -> auditLogger.logTransactionFailure(VALID_REF, VALID_TYPE, "  ", VALID_USER, "Bad account"));
     }
 
     // ── logTransactionFailure – required fields ─────────────────────────

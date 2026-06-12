@@ -48,6 +48,27 @@ class TransactionProcessorTest {
         assertEquals("DEBIT", r.type);
     }
 
+    // ── processDebit – requestingUser gap (OCC compliance concern) ────
+
+    @Test
+    void should_succeedDebit_when_requestingUserIsNull() {
+        // Documents production gap: processDebit does not validate requestingUser,
+        // unlike processCredit which throws for null/blank.
+        // This asymmetry may be an OCC compliance concern since audit records
+        // require a "who" field.
+        TransactionResult r = processor.processDebit(
+                VALID_ACCOUNT, VALID_ROUTING, new BigDecimal("1.00"), null);
+        assertEquals("DEBIT", r.type);
+    }
+
+    @Test
+    void should_succeedDebit_when_requestingUserIsBlank() {
+        // Documents same gap as above for blank strings.
+        TransactionResult r = processor.processDebit(
+                VALID_ACCOUNT, VALID_ROUTING, new BigDecimal("1.00"), "  ");
+        assertEquals("DEBIT", r.type);
+    }
+
     // ── processDebit – MFA threshold ────────────────────────────────────
 
     @Test
